@@ -9,8 +9,7 @@ appointments = []
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "Salom! Navbat qoshish uchun quyidagi formatda yozing:
-
+        "Salom! Navbat qoshish uchun yozing:
 "
         "Ism: Aliyev Vohid
 "
@@ -18,6 +17,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 "
         "Sana: 29.05.2026"
     )
+
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
