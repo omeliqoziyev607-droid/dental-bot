@@ -7,60 +7,38 @@ TOKEN = "7874069508:AAFTXxSlRM45b-5TsCEENtDkRxD7HuuAnj4"
 appointments = []
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = "Salom! Navbat qoshish uchun yozing:"
-    msg += "
-Ism: Aliyev Vohid"
-    msg += "
-Soat: 14:30"
-    msg += "
-Sana: 29.05.2026"
+    msg = "Salom! Navbat qoshish uchun yozing:\nIsm: Aliyev Vohid\nSoat: 14:30\nSana: 29.05.2026"
     await update.message.reply_text(msg)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    lines = text.strip().split('
-')
     data = {}
-    for line in lines:
-        if ':' in line:
-            key, value = line.split(':', 1)
-            data[key.strip().lower()] = value.strip()
-    if 'ism' in data and 'soat' in data:
-        appointment = {
-            "name": data.get('ism', ''),
-            "time": data.get('soat', ''),
-            "date": data.get('sana', datetime.now().strftime('%d.%m.%Y')),
+    for line in text.strip().split("\n"):
+        if ":" in line:
+            k, v = line.split(":", 1)
+            data[k.strip().lower()] = v.strip()
+    if "ism" in data and "soat" in data:
+        a = {
+            "name": data["ism"],
+            "time": data["soat"],
+            "date": data.get("sana", datetime.now().strftime("%d.%m.%Y")),
             "timestamp": datetime.now().isoformat()
         }
-        appointments.append(appointment)
-        msg = "Navbat qoshildi!"
-        msg += "
-Bemor: " + appointment['name']
-        msg += "
-Soat: " + appointment['time']
-        msg += "
-Sana: " + appointment['date']
+        appointments.append(a)
+        msg = "Navbat qoshildi!\nBemor: " + a["name"] + "\nSoat: " + a["time"] + "\nSana: " + a["date"]
         await update.message.reply_text(msg)
     else:
-        msg = "Format notogri! Quyidagicha yozing:"
-        msg += "
-Ism: Aliyev Vohid"
-        msg += "
-Soat: 14:30"
-        msg += "
-Sana: 29.05.2026"
+        msg = "Format notogri!\nQuyidagicha yozing:\nIsm: Aliyev Vohid\nSoat: 14:30\nSana: 29.05.2026"
         await update.message.reply_text(msg)
 
 async def get_appointments(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not appointments:
         await update.message.reply_text("Navbatlar yoq")
         return
-    text = "Bugungi navbatlar:
-"
+    t = "Bugungi navbatlar:\n"
     for i, a in enumerate(appointments, 1):
-        text += str(i) + ". " + a['name'] + " - " + a['time'] + " (" + a['date'] + ")
-"
-    await update.message.reply_text(text)
+        t += str(i) + ". " + a["name"] + " - " + a["time"] + " (" + a["date"] + ")\n"
+    await update.message.reply_text(t)
 
 def main():
     app = Application.builder().token(TOKEN).build()
