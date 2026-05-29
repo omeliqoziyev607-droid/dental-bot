@@ -7,7 +7,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from datetime import datetime
 
-TOKEN = "7874069508:AAFTXxSlRM45b-5TsCEENtDkRxD7HuuAnj4"
+TOKEN = "7874069508:AAG_yIIwd9Z9TRPXWMbzbeXQsH4y_36GNKc"
 DATA_FILE = "/tmp/appointments.json"
 
 def load_appointments():
