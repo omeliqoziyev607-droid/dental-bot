@@ -7,13 +7,16 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from datetime import datetime
 
-TOKEN = os.environ.get("BOT_TOKEN", "7874069508:AAFTXxSlRM45b-5TsCEENtDkRxD7HuuAnj4")
-DATA_FILE = "appointments.json"
+TOKEN = "7874069508:AAFTXxSlRM45b-5TsCEENtDkRxD7HuuAnj4"
+DATA_FILE = "/tmp/appointments.json"
 
 def load_appointments():
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+        try:
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            return []
     return []
 
 def save_appointments(data):
@@ -22,30 +25,38 @@ def save_appointments(data):
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path == "/appointments":
-            data = json.dumps(load_appointments(), ensure_ascii=False)
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Access-Control-Allow-Origin", "*")
+        try:
+            if self.path == "/appointments":
+                result = load_appointments()
+                data = json.dumps(result, ensure_ascii=False)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(data.encode("utf-8"))
+            elif self.path == "/clear":
+                save_appointments([])
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain")
+                self.end_headers()
+                self.wfile.write(b"Cleared!")
+            else:
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain")
+                self.end_headers()
+                self.wfile.write("Bot ishlayapti!".encode("utf-8"))
+        except Exception as e:
+            self.send_response(500)
             self.end_headers()
-            self.wfile.write(data.encode("utf-8"))
-        elif self.path == "/clear":
-            save_appointments([])
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b"Cleared!")
-        else:
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write("Bot ishlayapti!".encode("utf-8"))
+            self.wfile.write(str(e).encode("utf-8"))
 
     def log_message(self, format, *args):
         pass
 
 def run_http_server():
     port = int(os.environ.get("PORT", 8080))
+    print(f"HTTP server port: {port}", flush=True)
     server = HTTPServer(("0.0.0.0", port), Handler)
-    print(f"HTTP server started on port {port}")
     server.serve_forever()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -92,6 +103,7 @@ async def clear_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Barcha navbatlar tozalandi!")
 
 async def run_bot():
+    print("Bot starting...", flush=True)
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("navbatlar", get_appointments))
@@ -99,13 +111,17 @@ async def run_bot():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     await app.initialize()
     await app.start()
-    await app.updater.start_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
-    print("Bot started!")
+    await app.updater.start_polling(
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True
+    )
+    print("Bot started successfully!", flush=True)
     await asyncio.Event().wait()
 
 def main():
     http_thread = threading.Thread(target=run_http_server, daemon=True)
     http_thread.start()
+    print("Starting bot...", flush=True)
     asyncio.run(run_bot())
 
 if __name__ == "__main__":
