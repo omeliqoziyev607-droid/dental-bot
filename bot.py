@@ -4,20 +4,17 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from datetime import datetime
 
 TOKEN = "7874069508:AAFTXxSlRM45b-5TsCEENtDkRxD7HuuAnj4"
-
 appointments = []
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "Salom! Navbat qoshish uchun yozing:
-"
-        "Ism: Aliyev Vohid
-"
-        "Soat: 14:30
-"
-        "Sana: 29.05.2026"
-    )
-
+    msg = "Salom! Navbat qoshish uchun yozing:"
+    msg += "
+Ism: Aliyev Vohid"
+    msg += "
+Soat: 14:30"
+    msg += "
+Sana: 29.05.2026"
+    await update.message.reply_text(msg)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
@@ -28,7 +25,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if ':' in line:
             key, value = line.split(':', 1)
             data[key.strip().lower()] = value.strip()
-    
     if 'ism' in data and 'soat' in data:
         appointment = {
             "name": data.get('ism', ''),
@@ -37,35 +33,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "timestamp": datetime.now().isoformat()
         }
         appointments.append(appointment)
-        await update.message.reply_text(
-            "Navbat qoshildi!
-"
-            "Bemor: " + appointment['name'] + "
-"
-            "Soat: " + appointment['time'] + "
-"
-            "Sana: " + appointment['date']
-        )
+        msg = "Navbat qoshildi!"
+        msg += "
+Bemor: " + appointment['name']
+        msg += "
+Soat: " + appointment['time']
+        msg += "
+Sana: " + appointment['date']
+        await update.message.reply_text(msg)
     else:
-        await update.message.reply_text(
-            "Format notogri!
-
-"
-            "Quyidagicha yozing:
-"
-            "Ism: Aliyev Vohid
-"
-            "Soat: 14:30
-"
-            "Sana: 29.05.2026"
-        )
+        msg = "Format notogri! Quyidagicha yozing:"
+        msg += "
+Ism: Aliyev Vohid"
+        msg += "
+Soat: 14:30"
+        msg += "
+Sana: 29.05.2026"
+        await update.message.reply_text(msg)
 
 async def get_appointments(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not appointments:
         await update.message.reply_text("Navbatlar yoq")
         return
     text = "Bugungi navbatlar:
-
 "
     for i, a in enumerate(appointments, 1):
         text += str(i) + ". " + a['name'] + " - " + a['time'] + " (" + a['date'] + ")
