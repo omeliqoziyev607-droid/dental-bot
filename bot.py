@@ -7,7 +7,9 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from datetime import datetime
 
-TOKEN = os.environ.get("BOT_TOKEN", "7874069508:AAG_yIIwd9Z9TRPXWMbzbeXQsH4y_36GNKc")
+TOKEN = os.environ.get("BOT_TOKEN")
+if not TOKEN:
+    raise ValueError("BOT_TOKEN environment variable is not set!")
 DATA_FILE = "/tmp/appointments.json"
 
 def load_appointments():
