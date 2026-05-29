@@ -1,5 +1,7 @@
 import os
 import json
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from datetime import datetime
@@ -16,6 +18,27 @@ def load_appointments():
 def save_appointments(appointments):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(appointments, f, ensure_ascii=False, indent=2)
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == "/appointments":
+            data = json.dumps(load_appointments(), ensure_ascii=False)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(data.encode("utf-8"))
+        else:
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"Bot ishlayapti!")
+    def log_message(self, format, *args):
+        pass
+
+def run_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(("0.0.0.0", port), Handler)
+    server.serve_forever()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = "Salom! Navbat qoshish uchun yozing:\nIsm: Aliyev Vohid\nSoat: 14:30\nSana: 29.05.2026"
@@ -61,6 +84,9 @@ async def clear_appointments(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await update.message.reply_text("Barcha navbatlar tozalandi!")
 
 def main():
+    t = threading.Thread(target=run_server)
+    t.daemon = True
+    t.start()
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("navbatlar", get_appointments))
