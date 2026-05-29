@@ -1,12 +1,13 @@
 import os
 import json
+import asyncio
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from datetime import datetime
 
-TOKEN = "7874069508:AAFTXxSlRM45b-5TsCEENtDkRxD7HuuAnj4"
+TOKEN = os.environ.get("BOT_TOKEN", "7874069508:AAFTXxSlRM45b-5TsCEENtDkRxD7HuuAnj4")
 DATA_FILE = "appointments.json"
 
 def load_appointments():
@@ -15,29 +16,36 @@ def load_appointments():
             return json.load(f)
     return []
 
-def save_appointments(appointments):
+def save_appointments(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(appointments, f, ensure_ascii=False, indent=2)
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/appointments":
             data = json.dumps(load_appointments(), ensure_ascii=False)
             self.send_response(200)
-            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(data.encode("utf-8"))
+        elif self.path == "/clear":
+            save_appointments([])
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"Cleared!")
         else:
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(b"Bot ishlayapti!")
+            self.wfile.write("Bot ishlayapti!".encode("utf-8"))
+
     def log_message(self, format, *args):
         pass
 
-def run_server():
+def run_http_server():
     port = int(os.environ.get("PORT", 8080))
     server = HTTPServer(("0.0.0.0", port), Handler)
+    print(f"HTTP server started on port {port}")
     server.serve_forever()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -79,20 +87,26 @@ async def get_appointments(update: Update, context: ContextTypes.DEFAULT_TYPE):
         t += str(i) + ". " + a["name"] + " - " + a["time"] + " (" + a["date"] + ")\n"
     await update.message.reply_text(t)
 
-async def clear_appointments(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def clear_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_appointments([])
     await update.message.reply_text("Barcha navbatlar tozalandi!")
 
-def main():
-    t = threading.Thread(target=run_server)
-    t.daemon = True
-    t.start()
+async def run_bot():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("navbatlar", get_appointments))
-    app.add_handler(CommandHandler("tozala", clear_appointments))
+    app.add_handler(CommandHandler("tozala", clear_cmd))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.run_polling()
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
+    print("Bot started!")
+    await asyncio.Event().wait()
+
+def main():
+    http_thread = threading.Thread(target=run_http_server, daemon=True)
+    http_thread.start()
+    asyncio.run(run_bot())
 
 if __name__ == "__main__":
     main()
